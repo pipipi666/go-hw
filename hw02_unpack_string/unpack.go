@@ -42,7 +42,6 @@ func Unpack(s string) (string, error) {
 				return "", ErrInvalidString
 			}
 		} else {
-
 			if len(lastChar) > 0 {
 				sb.WriteString(lastChar)
 			}

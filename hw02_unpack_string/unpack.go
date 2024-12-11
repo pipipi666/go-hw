@@ -12,9 +12,26 @@ func Unpack(s string) (string, error) {
 	// Place your code here.
 	sb := strings.Builder{}
 	lastChar := ""
+	isSlash := false
 
 	for _, char := range s {
 		str := string(char)
+
+		if isSlash {
+			if len(lastChar) > 0 {
+				sb.WriteString(lastChar)
+			}
+
+			isSlash = false
+			lastChar = str
+			continue
+		}
+
+		if str == `\` {
+			isSlash = true
+			continue
+		}
+
 		num, err := strconv.Atoi(str)
 
 		if err == nil {
@@ -25,6 +42,7 @@ func Unpack(s string) (string, error) {
 				return "", ErrInvalidString
 			}
 		} else {
+
 			if len(lastChar) > 0 {
 				sb.WriteString(lastChar)
 			}

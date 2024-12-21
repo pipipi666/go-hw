@@ -1,22 +1,31 @@
 package hw03frequencyanalysis
 
 import (
+	"regexp"
 	"sort"
 	"strings"
 )
+
+var reg = regexp.MustCompile("^[[:punct:]]+|[[:punct:]]+$")
 
 func Top10(str string) []string {
 	wordCount := map[string]int{}
 	words := []string{}
 
 	for _, word := range strings.Fields(str) {
-		_, ok := wordCount[word]
+		formattedWord := reg.ReplaceAllString(strings.ToLower(word), "")
+
+		if len(formattedWord) == 0 {
+			continue
+		}
+
+		_, ok := wordCount[formattedWord]
 
 		if ok {
-			wordCount[word]++
+			wordCount[formattedWord]++
 		} else {
-			wordCount[word] = 1
-			words = append(words, word)
+			wordCount[formattedWord] = 1
+			words = append(words, formattedWord)
 		}
 	}
 

@@ -7,7 +7,7 @@ import (
 )
 
 // Change to true if needed.
-var taskWithAsteriskIsCompleted = false
+var taskWithAsteriskIsCompleted = true
 
 var text = `Как видите, он  спускается  по  лестнице  вслед  за  своим
 	другом   Кристофером   Робином,   головой   вниз,  пересчитывая
@@ -42,6 +42,16 @@ var text = `Как видите, он  спускается  по  лестни�
 	иногда,  особенно  когда  папа  дома,  он больше любит тихонько
 	посидеть у огня и послушать какую-нибудь интересную сказку.
 		В этот вечер...`
+
+var textNew1 = `.Слово -слово = - слово! !!!слово , . ,.- ?!слово!!`
+
+var textNew2 = `.Словоё -слово = - слово! !!!слово , . слово`
+
+var textNew3 = `.Словоё -слово = - слово! !!!слово , . ,.- ?!слово!! !сло!во! ⓴`
+
+var textNew4 = `.Словоё -слово = - слово! !!!слово , . ,.- ?!слово!! !💪!! 💪`
+
+var textNew5 = `💪💪💪 💪💪💪-💪💪💪`
 
 func TestTop10(t *testing.T) {
 	t.Run("no words in empty string", func(t *testing.T) {
@@ -78,5 +88,30 @@ func TestTop10(t *testing.T) {
 			}
 			require.Equal(t, expected, Top10(text))
 		}
+	})
+
+	t.Run("new positive test 1", func(t *testing.T) {
+		expected := []string{"слово"}
+		require.Equal(t, expected, Top10(textNew1))
+	})
+
+	t.Run("new positive test 2", func(t *testing.T) {
+		expected := []string{"слово", "словоё"}
+		require.Equal(t, expected, Top10(textNew2))
+	})
+
+	t.Run("new positive test 3", func(t *testing.T) {
+		expected := []string{"слово", "сло!во", "словоё", "⓴"}
+		require.Equal(t, expected, Top10(textNew3))
+	})
+
+	t.Run("new positive test 4", func(t *testing.T) {
+		expected := []string{"слово", "💪", "словоё"}
+		require.Equal(t, expected, Top10(textNew4))
+	})
+
+	t.Run("new positive test 5", func(t *testing.T) {
+		expected := []string{"💪💪💪", "💪💪💪-💪💪💪"}
+		require.Equal(t, expected, Top10(textNew5))
 	})
 }

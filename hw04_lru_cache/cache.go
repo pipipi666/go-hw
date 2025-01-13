@@ -36,7 +36,7 @@ func (l *lruCache) Set(key Key, value interface{}) bool {
 		return true
 	}
 
-	if l.queue.Len()+1 > l.capacity {
+	if l.queue.Len() >= l.capacity {
 		tail := l.queue.Back()
 		v, ok := tail.Value.(cacheItemValue)
 

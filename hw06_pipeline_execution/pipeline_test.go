@@ -125,7 +125,6 @@ func TestPipeline(t *testing.T) {
 		require.Len(t, result, 0)
 		require.Less(t, int64(elapsed), int64(fault))
 	})
-
 }
 
 func TestAllStageStop(t *testing.T) {

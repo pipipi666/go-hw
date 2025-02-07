@@ -8,6 +8,29 @@ type (
 
 type Stage func(in In) (out Out)
 
+func writeRes(resCh Bi, done In, stageCh Out) {
+	defer close(resCh)
+
+	for {
+		select {
+		case <-done:
+			go func() {
+				for range stageCh { //nolint:revive
+				}
+			}()
+
+			return
+
+		case val, ok := <-stageCh:
+			if !ok {
+				return
+			}
+
+			resCh <- val
+		}
+	}
+}
+
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
 	out := in
 
@@ -15,22 +38,7 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 		stageCh := stage(out)
 		resCh := make(Bi)
 
-		go func() {
-			defer close(resCh)
-
-			for {
-				select {
-				case <-done:
-					return
-				case val, ok := <-stageCh:
-					if !ok {
-						return
-					}
-
-					resCh <- val
-				}
-			}
-		}()
+		go writeRes(resCh, done, stageCh)
 
 		out = resCh
 	}

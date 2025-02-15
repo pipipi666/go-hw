@@ -46,7 +46,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	var count int64
 
-	if size > limit {
+	if (size > limit) && (limit > 0) {
 		count = limit
 	} else {
 		count = size
@@ -56,7 +56,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	defer bar.Finish()
 	barReader := bar.NewProxyReader(reader)
 
-	_, err := io.CopyN(writer, barReader, limit)
+	_, err := io.CopyN(writer, barReader, count)
 
 	if errors.Is(err, io.EOF) {
 		return nil

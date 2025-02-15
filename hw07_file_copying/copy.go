@@ -34,7 +34,11 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	defer reader.Close()
 
-	reader.Seek(offset, io.SeekStart)
+	_, errSeek := reader.Seek(offset, io.SeekStart)
+
+	if errSeek != nil {
+		return errSeek
+	}
 
 	writer, errWriter := os.Create(toPath)
 
@@ -44,12 +48,10 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	defer writer.Close()
 
-	var count int64
+	count := size
 
 	if (size > limit) && (limit > 0) {
 		count = limit
-	} else {
-		count = size
 	}
 
 	bar := pb.Full.Start64(count)

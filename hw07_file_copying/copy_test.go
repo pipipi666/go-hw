@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -13,7 +14,12 @@ func deleteTestFile(fileName string) {
 }
 
 func TestCopy(t *testing.T) {
-	testFileName := "out.txt"
+	testFile, err := os.CreateTemp("", "out.txt")
+	if err != nil {
+		fmt.Println("Create tpm file error")
+	}
+
+	testFileName := testFile.Name()
 
 	defer deleteTestFile(testFileName)
 

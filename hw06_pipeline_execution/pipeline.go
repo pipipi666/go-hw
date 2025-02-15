@@ -8,16 +8,20 @@ type (
 
 type Stage func(in In) (out Out)
 
+func readCh(stageCh Out) {
+	go func() {
+		for range stageCh { //nolint:revive
+		}
+	}()
+}
+
 func writeRes(resCh Bi, done In, stageCh Out) {
 	defer close(resCh)
+	defer readCh(stageCh)
 
 	for {
 		select {
 		case <-done:
-			go func() {
-				for range stageCh { //nolint:revive
-				}
-			}()
 
 			return
 

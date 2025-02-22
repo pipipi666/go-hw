@@ -16,7 +16,7 @@ type ValidationError struct {
 
 type ValidationErrors []ValidationError
 
-type SimpleChecker func(entry []string, value reflect.Value) (validationErr error, err error)
+type SimpleChecker func(ruleKey string, ruleValue string, value reflect.Value) (validationErr error, err error)
 
 var (
 	ErrStrNotEqualLen = errors.New("invalid number of symbols")
@@ -44,100 +44,84 @@ func (v ValidationErrors) Error() string {
 	return strings.Join(res, ", ")
 }
 
-func checkStr(entry []string, value reflect.Value) (error, error) {
+func checkStr(ruleKey string, ruleValue string, value reflect.Value) (error, error) {
 	parsedValue := value.String()
 
-	switch entry[0] {
+	switch ruleKey {
 	case "len":
-		{
-			strLen, err := strconv.Atoi(entry[1])
-			if err != nil {
-				return nil, ErrAtoi
-			}
+		strLen, err := strconv.Atoi(ruleValue)
+		if err != nil {
+			return nil, ErrAtoi
+		}
 
-			if len(parsedValue) != strLen {
-				return ErrStrNotEqualLen, nil
-			}
+		if len(parsedValue) != strLen {
+			return ErrStrNotEqualLen, nil
 		}
 	case "regexp":
-		{
-			re, err := regexp.Compile(entry[1])
-			if err != nil {
-				return nil, ErrReg
-			}
+		re, err := regexp.Compile(ruleValue)
+		if err != nil {
+			return nil, ErrReg
+		}
 
-			if !re.Match([]byte(parsedValue)) {
-				return ErrStrRegMatch, nil
-			}
+		if !re.Match([]byte(parsedValue)) {
+			return ErrStrRegMatch, nil
 		}
 	case "in":
-		{
-			values := strings.Split(entry[1], ",")
+		values := strings.Split(ruleValue, ",")
 
-			if !slices.Contains(values, parsedValue) {
-				return ErrStrNotInArr, nil
-			}
+		if !slices.Contains(values, parsedValue) {
+			return ErrStrNotInArr, nil
 		}
 	default:
-		{
-			return nil, ErrValidator
-		}
+		return nil, ErrValidator
 	}
 
 	return nil, nil
 }
 
-func checkInt(entry []string, value reflect.Value) (error, error) {
+func checkInt(ruleKey string, ruleValue string, value reflect.Value) (error, error) {
 	if !value.CanInt() {
 		return nil, ErrType
 	}
 
 	parsedValue := int(value.Int())
 
-	switch entry[0] {
+	switch ruleKey {
 	case "min":
-		{
-			minVal, err := strconv.Atoi(entry[1])
-			if err != nil {
-				return nil, ErrAtoi
-			}
+		minVal, err := strconv.Atoi(ruleValue)
+		if err != nil {
+			return nil, ErrAtoi
+		}
 
-			if parsedValue < minVal {
-				return ErrIntMin, nil
-			}
+		if parsedValue < minVal {
+			return ErrIntMin, nil
 		}
 	case "max":
-		{
-			maxVal, err := strconv.Atoi(entry[1])
+		maxVal, err := strconv.Atoi(ruleValue)
+		if err != nil {
+			return nil, ErrAtoi
+		}
+
+		if parsedValue > maxVal {
+			return ErrIntMax, nil
+		}
+	case "in":
+		values := strings.Split(ruleValue, ",")
+
+		for _, v := range values {
+			parsedV, err := strconv.Atoi(v)
 			if err != nil {
 				return nil, ErrAtoi
 			}
 
-			if parsedValue > maxVal {
-				return ErrIntMax, nil
+			if parsedV == parsedValue {
+				return nil, nil
 			}
 		}
-	case "in":
-		{
-			values := strings.Split(entry[1], ",")
 
-			for _, v := range values {
-				parsedV, err := strconv.Atoi(v)
-				if err != nil {
-					return nil, ErrAtoi
-				}
-
-				if parsedV == parsedValue {
-					return nil, nil
-				}
-			}
-
-			return ErrIntNotInArr, nil
-		}
+		return ErrIntNotInArr, nil
 	default:
-		{
-			return nil, ErrValidator
-		}
+		return nil, ErrValidator
 	}
 
 	return nil, nil
@@ -147,28 +131,22 @@ func checkType(value reflect.Value, validators []string) ([]error, error) {
 	//nolint:exhaustive
 	switch value.Kind() {
 	case reflect.String:
-		{
-			return checkSimpleType(value, validators, checkStr)
-		}
+		return checkSimpleType(value, validators, checkStr)
 	case reflect.Int:
-		{
-			return checkSimpleType(value, validators, checkInt)
-		}
+		return checkSimpleType(value, validators, checkInt)
 	case reflect.Slice:
-		{
-			simpleTypeErrors := []error{}
+		simpleTypeErrors := []error{}
 
-			for i := 0; i < value.Len(); i++ {
-				validErr, err := checkType(value.Index(i), validators)
-				if err != nil {
-					return nil, err
-				}
-
-				simpleTypeErrors = append(simpleTypeErrors, validErr...)
+		for i := 0; i < value.Len(); i++ {
+			validErr, err := checkType(value.Index(i), validators)
+			if err != nil {
+				return nil, err
 			}
 
-			return simpleTypeErrors, nil
+			simpleTypeErrors = append(simpleTypeErrors, validErr...)
 		}
+
+		return simpleTypeErrors, nil
 	}
 
 	return nil, ErrType
@@ -179,7 +157,15 @@ func checkSimpleType(value reflect.Value, validators []string, cb SimpleChecker)
 
 	for _, validator := range validators {
 		entry := strings.Split(validator, ":")
-		validErr, err := cb(entry, value)
+
+		if len(entry) != 2 {
+			return nil, ErrValidator
+		}
+
+		ruleKey := entry[0]
+		ruleValue := entry[1]
+
+		validErr, err := cb(ruleKey, ruleValue, value)
 		if err != nil {
 			return nil, err
 		}

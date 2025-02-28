@@ -1,34 +1,66 @@
 package hw10programoptimization
 
 import (
-	"bufio"
+	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
-
-	"github.com/valyala/fastjson"
 )
+
+type User struct {
+	ID       int
+	Name     string
+	Username string
+	Email    string
+	Phone    string
+	Password string
+	Address  string
+}
 
 type DomainStat map[string]int
 
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
-	return countDomains(r, domain)
+	u, err := getUsers(r)
+	if err != nil {
+		return nil, fmt.Errorf("get users error: %w", err)
+	}
+	return countDomains(u, domain)
 }
 
-func countDomains(r io.Reader, domain string) (DomainStat, error) {
-	result := make(DomainStat)
-	scanner := bufio.NewScanner(r)
-	suff := "." + domain
+type users [100_000]User
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		email := fastjson.GetString([]byte(line), "Email")
-		matched := strings.HasSuffix(email, suff)
+func getUsers(r io.Reader) (result users, err error) {
+	decoder := json.NewDecoder(r)
+	i := 0
 
-		if matched {
-			num := strings.ToLower(strings.SplitN(email, "@", 2)[1])
-			result[num]++
+	for {
+		var user User
+
+		if err = decoder.Decode(&user); err == io.EOF {
+			err = nil
+			break
+		} else if err != nil {
+			return
 		}
+
+		result[i] = user
+		i++
 	}
 
+	return
+}
+
+func countDomains(u users, domain string) (DomainStat, error) {
+	result := make(DomainStat)
+	suff := "." + domain
+
+	for _, user := range u {
+		matched := strings.HasSuffix(user.Email, suff)
+
+		if matched {
+			key := strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])
+			result[key]++
+		}
+	}
 	return result, nil
 }

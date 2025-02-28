@@ -1,8 +1,6 @@
 module github.com/pipipi666/go-hw/hw10_program_optimization
 
-go 1.22.0
-
-toolchain go1.23.3
+go 1.23.3
 
 require github.com/stretchr/testify v1.7.0
 
